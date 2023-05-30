@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <style>
+        h2{
+            background-color: green;
+            color: white;
+            padding: 10px 0;
+        }
+        #form-div{
+            /* background-color: rgb(223, 216, 206); */
+            border: 1px solid gray;
+            border-radius: 5px;
+            padding: 1em;
+            margin: 2% 25% 2% 25%;
+        }
+        #list-div{
+            padding: 1em;
+            margin: 2% 25% 2% 25%;
+        }
+        #submit{
+            background-color: gray;
+            color: white;
+            border: none;
+            height: 2em;
+            border-radius: 3px;
+        }
+        .delete{
+            margin: 1% 2% 1% 2%;
+        }
+
+    </style>
+</head>
+<body>
+    <h2 class="text-center">Add Products</h2>
+    <div id="form-div">
+        <form id="form1">
+            <label for="sp" class="form-label">Selling Price : </label>
+            <input type="number" name="sp" id="sp" class="form-control" required>
+
+            <label for="productName" class="form-label">Product Name : </label>
+            <input type="text" name="productName" id="pname" class="form-control" required>
+
+            <label for="category" class="form-label">Category : </label>
+            <select name="category" id="cg" class="form-select" required>
+                <option value="Food">Food</option>
+                <option value="Products">Products</option>
+                <option value="Electronics">Electronics</option>
+                <option value="SkinCare">SkinCare</option>
+            </select>
+
+            <br>
+            <button type="submit" id="addProd" class="btn btn-sm btn-success mt-2">Add Product</button>
+            <br>
+        </form>
+    </div>
+
+    <div id="list-div">
+        <h3>Foods</h3>
+        <ul id="food-group" class="list-group"></ul>
+        <h3>Products</h3>
+        <ul id="prod-group" class="list-group"></ul> 
+        <h3>Electronics</h3>
+        <ul id="electronic-group" class="list-group"></ul>
+        <h3>SkinCare</h3>
+        <ul id="skincare-group" class="list-group"></ul>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+    <script>
+        const myForm = document.querySelector("#form1");
+        const sellingPrice = document.getElementById('sp');
+        const productName = document.getElementById('pname');
+        const category = document.getElementById('cg');
+        const addProduct = document.getElementById("addProd");
+        const ul = document.querySelector('ul');
+
+        const foodGroup=document.getElementById("food-group");
+        const prodGroup=document.getElementById("prod-group");
+        const electronicGroup=document.getElementById("electronic-group");
+        const skinGroup=document.getElementById("skincare-group");
+
+        window.addEventListener('DOMContentLoaded', ()=>{
+            axios.get('http://localhost:4000/')
+            .then(response=>{
+            for(let i=0;i<response.data.allProducts.length;i++){
+                showObjOnScreen(response.data.allProducts[i]);
+            }
+            console.log(response);
+            })
+            .catch(err=>{
+                console.log(err);
+            })
+        })
+
+        myForm.addEventListener('submit', onSubmit);
+
+        function onSubmit(e){
+            e.preventDefault();
+            // console.log(sellingPrice.value);
+            if(sellingPrice.value==='' || productName.value==='' || category.value=== ''){
+                alert('Enter the values!');
+            }
+            else{
+                let myObj = {
+                    sellingPrice:sellingPrice.value,
+                    productName:productName.value,
+                    category:category.value
+                }
+                // console.log(myObj);
+                axios
+                .post('http://localhost:4000/', myObj)
+                .then(response=>{
+                    console.log(response);
+                    showObjOnScreen(response.data.newProduct);
+                    // console.log(response)
+                })
+                .catch(err=>console.log(err));
+            }
+        }
+        function showObjOnScreen(obj){
+            
+            let li = document.createElement("li");
+            // li.className="list-group-item";
+            li.appendChild(document.createTextNode(`${obj.productName}`));
+            li.appendChild(document.createTextNode(` - ${obj.sellingPrice}`));
+            li.appendChild(document.createTextNode(` - ${obj.category} `));
+            switch(obj.category){
+                case 'Food': foodGroup.appendChild(li);
+                break;
+                case 'Products': prodGroup.appendChild(li);
+                break;
+                case 'Electronics': electronicGroup.appendChild(li);
+                break;
+                case 'SkinCare': skinGroup.appendChild(li);
+                break;
+            }
+
+            let del = document.createElement('button');
+            del.className="btn btn-warning btn-sm delete";
+            del.appendChild(document.createTextNode("delete"));
+            li.appendChild(del);
+        }
+
+        foodGroup.addEventListener('click', deleteItem);
+        prodGroup.addEventListener('click', deleteItem);
+        electronicGroup.addEventListener('click', deleteItem);
+        skinGroup.addEventListener('click', deleteItem);
+
+        function deleteItem(e){
+            if(e.target.classList.contains('delete')){
+                let user = e.target.parentElement;
+                // console.log(user.childNodes[2]);
+                const Category = user.childNodes[2].textContent;
+                switch(Category){
+                case ' - Food ': foodGroup.removeChild(user);
+                break;
+                case ' - Products ': prodGroup.removeChild(user);
+                break;
+                case ' - Electronics ': electronicGroup.removeChild(user);
+                break;
+                case ' - SkinCare ': skinGroup.removeChild(user);
+                break;
+                }
+                // ul.removeChild(user);
+
+                axios.get('http://localhost:4000/')
+                .then(response=>{
+                    for(let i=0;i<response.data.allProducts.length;i++){
+                        if(response.data.allProducts[i].productName===user.firstChild.textContent){
+                            console.log(response.data.allProducts[i]);
+                            axios
+                            .delete(`http://localhost:4000/${response.data.allProducts[i].id}`)
+                            .catch(err=>console.log(err));
+                        }
+                    }
+                })
+                .catch(err=>{
+                    console.log(err);
+                })
+            }
+        }
+
+    </script>
+
+</body>
+</html>
